@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <vector>
 #include <unordered_map>
 #include <stack>
@@ -15,9 +16,62 @@ struct frag {
     graph g;
 };
 
-char * re2post(char *infix) {
+int precedence(char op) {
+    switch (op) {
+    case '*':
+        return 3;
+        break;
+    case '.':
+        return 2;
+        break;
+    case '|':
+        return 1;
+        break;
+    case '(':
+        return 0;
+    }
+}
+
+string re2post(string infix) {
     /* convert input regex with lower-case alphabet and operators '|', '*', '()' and '.' to postfix */
-    //TODO
+    /* insert '.' between adjacent terminals */
+    int len = 0;
+    for (char c : infix) {
+        if (c != '(' && c != ')') {
+            ++len;
+        }
+    }
+    vector<char> postfix(len);
+    stack<char> s;
+    int i = 0;
+    for (char c : infix) {
+        if (c == '*' || c == '.' || c == '|') {
+            while (!s.empty() && precedence(s.top()) > precedence(c)) {
+                postfix[i++] = s.top();
+                s.pop();
+            }
+            s.push(c);
+        }
+        else if (c == '(') {
+            s.push(c);
+        }
+        else if (c == ')') {
+            while (s.top() != '(') {
+                postfix[i++] = s.top();
+                s.pop();
+            }
+            s.pop();
+        }
+        else {
+            postfix[i++] = c;
+        }
+    }
+    while (!s.empty()) {
+        postfix[i++] = s.top();
+        s.pop();
+    }
+    string ret_val(postfix.begin(), postfix.end());
+    return ret_val;
 }
 
 frag terminal(char c) {
@@ -66,13 +120,12 @@ frag star(frag &f) {
     ret.start = state_no++;
     ret.end = state_no++;
     (ret.g)[ret.start].push_back(make_pair(f.start, 'E'));
-   //(ret.g)[ret.start].push_back(make_pair(ret.start, 'E'));  //Why?
     for (auto ele : f.g) {
         (ret.g)[ele.first].assign(ele.second.begin(), ele.second.end());
     }
     (ret.g)[f.end].push_back(make_pair(f.start, 'E'));
     (ret.g)[f.end].push_back(make_pair(ret.end, 'E'));
-    (ret.g)[ret.start].push_back(make_pair(ret.end, 'E')); //added
+    (ret.g)[ret.start].push_back(make_pair(ret.end, 'E'));
     return ret;
 }
 
@@ -115,7 +168,7 @@ frag regex2nfa(string regex) {
     return ret;
 }
 
-void output_header() {   //Why set in epsilon closure
+void output_header() {
     /* outputs the initial code required for the simulator to file */
     outp_file << R"(#include <iostream>
 #include <unordered_map>
@@ -218,11 +271,18 @@ int main() {
 int main() {
     string regex;
     cin >> regex;
+    regex = re2post(regex);
+    /*
+    cout << '"' << regex << '"' << '\n';
+    for (char c : regex) {
+        cout << (int)c << ' ';
+    }
+    cout << '\n';
+    */
     outp_file.open("decider.cpp"); //change later
     output_header();
 
     frag nfa = regex2nfa(regex);
-
 
     cout << nfa.start << " " << nfa.end << '\n';
     cout << "From\t" << "To\t" << "Symbol\n";
@@ -231,7 +291,6 @@ int main() {
             cout << ele.first << "\t" << edge.first << "\t" << edge.second << "\n";
         }
     }
-
 
     output_nfa(nfa);
     output_tail();
