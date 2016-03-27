@@ -24,17 +24,27 @@ for line in input_file:
             for i in range(len(arg_list)):
                 arg_to_argnum[arg[i]] = i
                 argnum_to_actual[i] = ""
-            function_like_table[identifier[:identifier.find('(')]] = (arg_to_argnum, argnum_to_actual)
+            function_like_table[identifier[:identifier.find('(') + 1]] = (arg_to_argnum, argnum_to_actual)
         else:
             #obj-like macro
             object_like_table[identifier] = replacement
     else:
         #line is not a macro definition, check for replacements
         #assumes macro identifiers are not present where they should not be expanded e.g. in string literals
-        no_change = false
-        seen = {}
-        
-
+        no_change = False
+        seen = set()
+        while not no_change:
+            no_change = True
+            for obj_like_macro in object_like_table.keys():
+                if obj_like_macro in line and obj_like_macro not in seen:
+                    no_change = False
+                    line = line.replace(obj_like_macro, object_like_table[obj_like_macro])
+                    seen.add(obj_like_macro)
+            for func_like_macro in function_like_table.keys():
+                if func_like_macro in line and func_like_macro not in seen:
+                    no_change = False
+                    #add logic for replacing func-like code
+                    seen.add(func_like_macro)
 
 input_file.close()
 output_file.close()
