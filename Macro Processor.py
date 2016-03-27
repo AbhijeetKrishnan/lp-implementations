@@ -31,6 +31,7 @@ for line in input_file:
     else:
         #line is not a macro definition, check for replacements
         #assumes macro identifiers are not present where they should not be expanded e.g. in string literals
+        #assumes no macro identifier is a substring of another
         no_change = False
         seen = set()
         while not no_change:
@@ -39,12 +40,16 @@ for line in input_file:
                 if obj_like_macro in line and obj_like_macro not in seen:
                     no_change = False
                     line = line.replace(obj_like_macro, object_like_table[obj_like_macro])
+                    print("Replaced " + obj_like_macro + " with " + object_like_table[obj_like_macro])
+                    print(line)
                     seen.add(obj_like_macro)
             for func_like_macro in function_like_table.keys():
                 if func_like_macro in line and func_like_macro not in seen:
                     no_change = False
                     #add logic for replacing func-like code
                     seen.add(func_like_macro)
+
+        output_file.write(line)
 
 input_file.close()
 output_file.close()
