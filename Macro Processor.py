@@ -24,7 +24,7 @@ for line in input_file:
             for i in range(len(arg_list)):
                 arg_to_argnum[arg[i]] = i
                 argnum_to_actual[i] = ""
-            function_like_table[identifier[:identifier.find('(') + 1]] = (arg_to_argnum, argnum_to_actual)
+            function_like_table[identifier[:identifier.find('(') + 1]] = (arg_to_argnum, argnum_to_actual, replacement)
         else:
             #obj-like macro
             object_like_table[identifier] = replacement
@@ -32,6 +32,7 @@ for line in input_file:
         #line is not a macro definition, check for replacements
         #assumes macro identifiers are not present where they should not be expanded e.g. in string literals
         #assumes no macro identifier is a substring of another
+        #assumes formal parameter name is not a substring of replacement token list
         no_change = False
         seen = set()
         while not no_change:
@@ -46,7 +47,35 @@ for line in input_file:
             for func_like_macro in function_like_table.keys():
                 if func_like_macro in line and func_like_macro not in seen:
                     no_change = False
-                    #add logic for replacing func-like code
+
+                    #get parameters from macro call
+                    curr_param_num = 0
+                    curr_bracket_count = 1
+                    curr_param = ""
+                    total_call = func_like_macro
+                    i = line.find(func_like_macro) + len(func_like_macro) + 1
+                    while (curr_bracket_count > 0):
+                        if line[i] == '(':
+                            curr_bracket_count += 1
+                            curr_param += line[i]
+                        elif line[i] == ')':
+                            curr_bracket_count -= 1
+                            curr_param += line[i]
+                        elif line[i] == ',' and curr_bracket_count == 1:
+                            #param done, add to macro table
+                            function_like_table[func_like_macro][1][curr_param_num] = curr_param
+                            curr_param = ""
+                            curr_param_num += 1
+                        total_call += line[i]
+
+                    #construct replacement string
+                    replacement_string = function_like_table[func_like_macro][2]
+                    for formal_param in function_like_table[func_like_macro][0]:
+                        replacement_string.replace(formal_param, function_like_table[func_like_macro][1][function_like_table[func_like_macro][0][formal_param]])
+
+                    #make substitution
+                    line.replace(total_call, replacement_string)
+
                     seen.add(func_like_macro)
 
         output_file.write(line)
