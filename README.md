@@ -1,3 +1,5 @@
+This repository has been archived.
+
 # lp-implementations
 
 Implementations of two of the algorithms described in the Language Processors course at Visvesvaraya National Institute of Technology -
