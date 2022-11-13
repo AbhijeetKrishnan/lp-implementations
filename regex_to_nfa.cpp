@@ -29,6 +29,8 @@ int precedence(char op) {
         break;
     case '(':
         return 0;
+    default:
+        return -1;
     }
 }
 
@@ -279,7 +281,7 @@ int main() {
     }
     cout << '\n';
     */
-    outp_file.open("decider.cpp"); //change later
+    outp_file.open("decider.cpp"); // change later
     output_header();
 
     frag nfa = regex2nfa(regex);
